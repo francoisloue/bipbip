@@ -1,0 +1,109 @@
+openapi: 3.0.0
+info:
+  title: BipBip API
+  version: 0.1.0
+tags:
+  - name: services
+    description: services availables
+security: []
+paths:
+  /v1/api/home:
+    get:
+      summary: Get home information
+      operationId: getHome
+      responses:
+        200:
+          description: Home data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  version:
+                    type: string
+                  healthcheck:
+                    type: string
+                  user:
+                    type: string
+        500:
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /v1/api/user:
+    get:
+      summary: Get all transactions
+      operationId: transaction
+      responses:
+        200:
+          description: List of all the transactions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        500:
+          description: Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      summary: Create a new user
+      operationId: transaction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ name, password ]
+              properties:
+                id:
+                  type: integer
+                  description: transaction id, can be specified
+                name:
+                  type: string
+                  description: user name
+                password:
+                  type: string
+                  description: user password
+      responses:
+        201:
+          description: The created transaction
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        500:
+          description: Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+components:
+  schemas:
+    User:
+      type: object
+      required: [id, name, password]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        password:
+          type: string
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+          code:
+            type: number
+            description: error code
+          message:
+            type: string
+            description: error message
+          system_error:
+            type: string
+            description: system error message
