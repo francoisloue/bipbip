@@ -26,18 +26,18 @@ class UserService {
             const allUser: User[] = await UserController.retrieveAll();
             return res.status(200).json(allUser)
         } catch (err) {
-            console.log('Error retrieving all the transactions:', err);
-            return res.status(500).json({message: 'Error retrieving all the transactions'})
+            console.log('Error retrieving all the users:', err);
+            return res.status(500).json({message: 'Error retrieving all the users'})
         }
     }
     async retrieveById(req: Request, res: Response) {
         try {
-            let id: string | number | undefined = req.params.id
-            const allTransactions: User = await UserController.retrieveById(id);
-            return res.status(200).json(allTransactions)
+            let id: string | number | undefined = req.params.id;
+            const allUser: User = await UserController.retrieveById(id);
+            return res.status(200).json(allUser)
         } catch (err) {
-            console.log('Error retrieving all the transactions:', err);
-            return res.status(500).json({message: 'Error retrieving all the transactions'})
+            console.log('Error retrieving all the users:', err);
+            return res.status(500).json({message: 'Error retrieving all the users'})
         }
     }
     async delete(req: Request, res: Response) {

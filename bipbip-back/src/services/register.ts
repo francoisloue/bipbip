@@ -16,7 +16,6 @@ class RegisterService {
                 console.error({ message: 'Identifier already in use' });
                 return res.status(409).json({ message: 'Identifier already in use' });
             }
-
             console.error({ message: 'Error saving User', error: err });
             return res.status(500).json({ message: 'Error saving User', error: err });
         }
