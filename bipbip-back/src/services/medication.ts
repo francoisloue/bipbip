@@ -29,6 +29,16 @@ class MedicationService {
             return res.status(500).json({message: 'Error retrieving all the events'})
         }
     }
+
+    async getAllMedication(req: Request, res: Response) {
+        try {
+            const medication: Medication[] = await MedicationController.retrieveAll();
+            return res.status(200).json(medication)
+        } catch (err) {
+            console.log('Error retrieving all the events:', err);
+            return res.status(500).json({message: 'Error retrieving all the events'})
+        }
+    }
 }
 
 

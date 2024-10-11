@@ -15,6 +15,7 @@ class EventRoute {
     private initializeRoutes() {
         this.router.post("/", validateNewMedicationRequest, this.newMedication.bind(this));
         this.router.get("/:id", this.getById.bind(this));
+        this.router.get("/", this.getAll.bind(this));
     }
 
     private async newMedication(req: Request, res: Response): Promise<void> {
@@ -28,6 +29,15 @@ class EventRoute {
     private async getById(req: Request, res: Response): Promise<void> {
         try {
             const result = await this.medicationService.getMedicationById(req, res);
+            result;
+        } catch (error) {
+            res.status(500).json({message: "Internal Server Error", error});
+        }
+    }
+
+    private async getAll(req: Request, res: Response): Promise<void> {
+        try {
+            const result = await this.medicationService.getAllMedication(req, res);
             result;
         } catch (error) {
             res.status(500).json({message: "Internal Server Error", error});

@@ -24,8 +24,8 @@ class EventService {
 
     async getAllEventByUserId(req: Request, res: Response) {
         try {
-            let id: string | number | undefined = req.params.id;
-            const allEvent: Event = await EventController.getAllByAuthor(id);
+            let id: String = req.query.author as String;
+            const allEvent: Event[] = await EventController.getAllByAuthor(id);
             return res.status(200).json(allEvent)
         } catch (err) {
             console.log('Error retrieving all the events:', err);

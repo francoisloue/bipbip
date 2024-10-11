@@ -14,7 +14,7 @@ class EventRoute {
 
     private initializeRoutes() {
         this.router.post("/", validateNewEventRequest, this.newEvent.bind(this));
-        this.router.get("/:id", this.getAllByUserId.bind(this));
+        this.router.get("/", this.getAllByUserId.bind(this));
     }
 
     private async newEvent(req: Request, res: Response): Promise<void> {

@@ -6,23 +6,19 @@ import { Event } from "../types/event.type";
 
 interface EventControllerInterface {
     save(event: Event): Promise<Event>;
-    getAllByAuthor(userId: string | number | undefined): Promise<Event>;
+    getAllByAuthor(userId: string): Promise<Event[]>;
     retrieveById(eventId: string | number | undefined): Promise<Event>
 }
 
 class EventController implements EventControllerInterface {
-    getAllByAuthor(userId: string | number | undefined): Promise<Event> {
+    getAllByAuthor(userId: String): Promise<Event[]> {
         return new Promise((resolve, reject) => {
             connection.query<Event[] & RowDataPacket[][]>(
                 "SELECT * FROM events WHERE author = ?",
                 [userId],
                 (err, res) => {
                     if (err) reject(err);
-                    else {
-                        const event = res?.[0] as Event;
-                        if (event) resolve(event)
-                        else reject(`No event found with author = ${userId}`)
-                    }
+                    else resolve(res);
                 }
               );
         })
