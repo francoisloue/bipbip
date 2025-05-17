@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:bipbip/models/event.dart';
 
 class EventService {
-  final String apiUrl = 'http://10.60.113.15:8080/v1/api';
+  final String apiUrl = 'http://10.60.114.11:8080/v1/api';
 
   Future<List<Event>> fetchEvents(int userId) async {
     final response = await http.get(Uri.parse('$apiUrl/event/?author=$userId'));

@@ -9,7 +9,6 @@ class User {
     required this.tokenJWT,
   });
 
-  // Conversion d'un JSON vers un objet Dart
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
       id: json['id'],

@@ -3,7 +3,7 @@ import 'dart:convert';
 import '../models/medication.dart';
 
 class MedicationService {
-  final String baseUrl = "http://10.60.113.15:8080/v1/api";
+  final String baseUrl = "http://10.60.114.11:8080/v1/api";
 
   Future<Medication> fetchObject(int id) async {
     final response = await http.get(Uri.parse('$baseUrl/medication/$id'));
