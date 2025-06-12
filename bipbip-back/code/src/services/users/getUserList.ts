@@ -1,8 +1,13 @@
 import AbstractService from '../../contract/abstract.service';
+import usersController from '../../actions/usersActions';
 
 export class GetUserList extends AbstractService {
   async executeProcess(): Promise<object> {
-    return { message: 'Hello world' };
+    const users = await usersController.getUserListAction();
+    return {
+      status: 200,
+      users,
+    };
   }
 }
 

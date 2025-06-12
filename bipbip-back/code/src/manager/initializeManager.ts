@@ -8,6 +8,7 @@ import Router from '../infrastructure/router';
 import { serviceRegister } from '../serviceRegister';
 import expressWinston from 'express-winston';
 import { Service } from '../type/app/serviceType';
+import { openApiErrorHandler } from '../middleware/errorManager';
 
 const defaultMiddlewares = [
   express.json({
@@ -27,7 +28,6 @@ export const initApi = (options: {
     winstonInstance: logger,
     meta: true,
     expressFormat: false,
-    colorize: true,
     statusLevels: true,
     msg: (req, res) =>
       JSON.stringify(
@@ -40,6 +40,7 @@ export const initApi = (options: {
               method: req.method,
               url: req.originalUrl,
               headers: req.headers,
+              body: req.body
             },
             res: {
               statusCode: res.statusCode,
@@ -56,6 +57,7 @@ export const initApi = (options: {
     cors(),
     apiLogger,
     setLogger(logger),
+    express.json(),
   );
 
   logger.info('Service initialization');
@@ -71,6 +73,7 @@ export const initApi = (options: {
     ...options.expressOpenApiSettings,
   });
 
+  app.use(openApiErrorHandler);
   const PORT = process.env.PORT || 8080;
 
   app.listen(PORT, () => {

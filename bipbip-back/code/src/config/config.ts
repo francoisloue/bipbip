@@ -7,15 +7,14 @@ const apiConfig: ApiConfig = {
   version: packageJson.version,
   name: packageJson.name,
   env: 'dev',
-  messageBrokerUrl: '',
-  iamUrl: '',
   pathToOpenapiConfig: path.resolve(path.join(__dirname, '../openapi.yml')),
-  dataBaseUrl: '',
+  dataBaseName: 'bipbip',
+  dataBaseHost: 'localhost',
+  dataBasePort: 5432,
   dataBaseCredentials: {
-    user: '',
-    password: '',
-  },
-  keyCloakUrl: '',
+    user: 'bipuser',
+    password: 'bipsecret',
+  }
 };
 
 export default apiConfig;

@@ -1,5 +1,18 @@
-import HelloWorld from './services/helloWorld';
+import CreateEvent from './services/events/createEvent';
+import  DeleteEventFromId from './services/events/deleteEvent';
+import GetEventById from './services/events/getEventById';
+import GetEventList from './services/events/getEventList';
+import UpdateEventFromId from './services/events/updateEvent';
+import CreateMedication from './services/medications/createMedication';
+import DeleteMedicationFromId from './services/medications/deleteMedication';
+import GetMedicationById from './services/medications/getMedicationById';
+import GetMedicationList from './services/medications/getMedicationList';
+import UpdateMedicationFromId from './services/medications/updateMedication';
+import CreateUser from './services/users/createUser';
+import DeleteUserFromId from './services/users/deleteUser';
+import GetUserById from './services/users/getUserById';
 import GetUserList from './services/users/getUserList';
+import UpdateUserFromId from './services/users/updateUser';
 import { Service } from './type/app/serviceType';
 
 export const serviceRegister: Service[] = [
@@ -9,58 +22,62 @@ export const serviceRegister: Service[] = [
   },
   {
     operationId: 'createUser',
-    className: HelloWorld,
+    className: CreateUser,
   },
   {
     operationId: 'getUserById',
-    className: HelloWorld,
+    className: GetUserById,
   },
   {
     operationId: 'updateUser',
-    className: HelloWorld,
+    className: UpdateUserFromId,
   },
   {
     operationId: 'deleteUser',
-    className: HelloWorld,
+    className: DeleteUserFromId,
   },
   {
     operationId: 'getEventList',
-    className: HelloWorld,
+    className: GetEventList,
   },
   {
     operationId: 'createEvent',
-    className: HelloWorld,
+    className: CreateEvent,
   },
   {
     operationId: 'getEventById',
-    className: HelloWorld,
+    className: GetEventById,
   },
   {
     operationId: 'updateEvent',
-    className: HelloWorld,
+    className: UpdateEventFromId  ,
   },
   {
     operationId: 'deleteEvent',
-    className: HelloWorld,
+    className: DeleteEventFromId,
+  },
+  {
+    operationId: 'getEventByUserId',
+    className: GetEventList
   },
   {
     operationId: 'getMedicationList',
-    className: HelloWorld,
+    className: GetMedicationList,
   },
   {
     operationId: 'createMedication',
-    className: HelloWorld,
+    className: CreateMedication,
   },
   {
     operationId: 'getMedicationById',
-    className: HelloWorld,
+    className: GetMedicationById,
   },
   {
     operationId: 'updateMedication',
-    className: HelloWorld,
+    className: UpdateMedicationFromId,
   },
   {
     operationId: 'deleteMedication',
-    className: HelloWorld,
-  },
+    className: DeleteMedicationFromId,
+  }
 ];

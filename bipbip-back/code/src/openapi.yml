@@ -4,7 +4,7 @@ info:
   description: API permettant la gestion des utilisateurs, des évènements et des médicaments de l'application BipBip.
   version: 0.1.0
 servers:
-  - url: http://localhost:3000
+  - url: http://localhost:8080
 components:
   securitySchemes:
     bearerAuth:
@@ -14,10 +14,8 @@ components:
   schemas:
     User:
       type: object
-      required: [ id, name, surname, age, weight, height ]
+      required: [ name, surname, age, weight, height ]
       properties:
-        id:
-          type: integer
         name:
           type: string
         surname:
@@ -30,7 +28,7 @@ components:
           type: integer
     Event:
       type: object
-      required: [ id, user_id, name, description, frequency, is_active, medication_id, take_pill_date ]
+      required: [ user_id, name, description, frequency, is_active, medication_id, take_pill_date ]
       properties:
         id:
           type: integer
@@ -51,7 +49,7 @@ components:
           format: date-time
     Medication:
       type: object
-      required: [ id, name, image_url, notice_url ]
+      required: [ name, image_url, notice_url ]
       properties:
         id:
           type: integer
@@ -257,6 +255,34 @@ paths:
       responses:
         204:
           description: Évènement supprimé avec succès
+
+  /v1/bipbip/event?user={id}:
+    get:
+      tags: [Event]
+      operationId: getEventByUserId
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: Détails du médicament
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ status, events ]
+                properties:
+                  status:
+                    type: integer
+                  events:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Event'
 
   /v1/bipbip/medication:
     get:

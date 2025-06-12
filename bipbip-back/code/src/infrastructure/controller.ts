@@ -18,7 +18,7 @@ export class Controller {
   public async render(req: ApiRequest, res: Response): Promise<void> {
     await this.commonRender(req, res, {
       headers: req.headers,
-      ...req.body,
+      body: {...req.body},
       ...req.query,
       ...req.params,
     });
@@ -60,7 +60,6 @@ export class Controller {
         errorMessage: 'Service introuvable',
       });
     } else {
-      console.log(req);
       const serviceResponse: object = await service.process(requestBody);
       this.returnResponse(req, res, HttpStatus.OK, serviceResponse);
     }
