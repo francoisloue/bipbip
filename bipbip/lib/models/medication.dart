@@ -9,7 +9,6 @@ class Medication {
     this.description,
   });
 
-  // Conversion d'un JSON vers un objet Dart
   factory Medication.fromJson(Map<String, dynamic> json) {
     return Medication(
       id: json['id'],

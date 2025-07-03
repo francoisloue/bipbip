@@ -24,7 +24,6 @@ class _EventListViewState extends State<EventListView> {
   }
 
   Future<void> _reloadEvents() async {
-    // Pas besoin d'utiliser setState ici, juste attendre la récupération des événements
     futureEvents = eventController.getUserEvents(2);
     await futureEvents;
     setState(() {});
@@ -53,8 +52,8 @@ class _EventListViewState extends State<EventListView> {
               itemBuilder: (context, index) {
                 Event event = events[index];
                 String formattedDate = event.takePillDate != null
-                    ? DateFormat('yyyy-MM-dd').format(event.takePillDate!)
-                    : 'Date non spécifiée';
+                    ? DateFormat.Hm().format(event.takePillDate!)
+                    : 'Heure non spécifiée';
                 String medicationName = event.medication?.name ?? 'Aucun médicament';
                 return Card(
                   margin: const EdgeInsets.all(10),
@@ -70,7 +69,7 @@ class _EventListViewState extends State<EventListView> {
                         ),
                         const SizedBox(height: 8),
                         Text('Médicament : $medicationName'),
-                        Text('Date de prise : $formattedDate'),
+                        Text('Heure de prise du médicament : $formattedDate'),
                         if (event.description.isNotEmpty) ...[
                           const SizedBox(height: 8),
                           Text('Description : ${event.description}'),
@@ -86,17 +85,14 @@ class _EventListViewState extends State<EventListView> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          // Naviguer vers la vue pour créer un nouvel événement
           final result = await Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) => const CreateEventScreen(),
             ),
           );
-          // Si un événement a été créé (result == true), recharger la liste des événements
           if (result == true) {
             setState(() {
-              // Met à jour les événements uniquement si un nouvel événement a été ajouté
               futureEvents = eventController.getUserEvents(2);
             });
           }

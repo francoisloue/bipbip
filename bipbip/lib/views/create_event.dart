@@ -42,38 +42,37 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   }
 
   Future<void> _submitForm() async {
-  if (_formKey.currentState!.validate() && _takePillDate != null && _selectedMedication != null) {
-    _formKey.currentState!.save();
-    Event newEvent = Event(
-      id: 0, // L'ID sera généré côté backend
-      name: _name,
-      description: _description ?? '',
-      author: 2, // Exemple d'ID utilisateur
-      creationDate: DateTime.now(),
-      takePillDate: _takePillDate!,
-      medicationId: 0,
-      medication: _selectedMedication,
-    );
-    try {
-      await _eventService.createEvent(newEvent);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Événement créé avec succès')),
+    if (_formKey.currentState!.validate() && _takePillDate != null && _selectedMedication != null) {
+      _formKey.currentState!.save();
+      Event newEvent = Event(
+        id: 0,
+        name: _name,
+        description: _description ?? '',
+        author: 2,
+        creationDate: DateTime.now(),
+        takePillDate: _takePillDate!,
+        medicationId: 0,
+        medication: _selectedMedication,
       );
-      Navigator.pop(context, 'success');
-    } catch (error) {
-      print('Erreur lors de la création de l\'événement: $error');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Erreur lors de la création')),
-      );
+      try {
+        await _eventService.createEvent(newEvent);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Événement créé avec succès')),
+        );
+        Navigator.pop(context, 'success');
+      } catch (error) {
+        print('Erreur lors de la création de l\'événement: $error');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Erreur lors de la création')),
+        );
+      }
     }
   }
-}
-
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Créer un evénement')),
+      appBar: AppBar(title: const Text('Créer un événement')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -100,8 +99,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
               ),
               ListTile(
                 title: Text(_takePillDate == null
-                    ? 'Sélectionner la date de prise'
-                    : DateFormat('yyyy-MM-dd').format(_takePillDate!)),
+                    ? 'Sélectionner la date et l\'heure de prise'
+                    : DateFormat('yyyy-MM-dd HH:mm').format(_takePillDate!)),
                 trailing: const Icon(Icons.calendar_today),
                 onTap: () async {
                   DateTime? pickedDate = await showDatePicker(
@@ -111,9 +110,21 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                     lastDate: DateTime(2101),
                   );
                   if (pickedDate != null) {
-                    setState(() {
-                      _takePillDate = pickedDate;
-                    });
+                    TimeOfDay? pickedTime = await showTimePicker(
+                      context: context,
+                      initialTime: TimeOfDay.now(),
+                    );
+                    if (pickedTime != null) {
+                      setState(() {
+                        _takePillDate = DateTime(
+                          pickedDate.year,
+                          pickedDate.month,
+                          pickedDate.day,
+                          pickedTime.hour,
+                          pickedTime.minute,
+                        );
+                      });
+                    }
                   }
                 },
               ),
