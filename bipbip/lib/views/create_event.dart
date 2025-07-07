@@ -1,9 +1,12 @@
+import 'package:bipbip/models/newEvent.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:bipbip/models/event.dart';
 import 'package:bipbip/models/medication.dart';
 import 'package:bipbip/services/event.dart';
 import 'package:bipbip/services/medication.dart';
+import 'package:bipbip/services/bluetooth_service.dart';
+import 'dart:async';
+import 'package:bluetooth_classic/models/device.dart';
 
 class CreateEventScreen extends StatefulWidget {
   const CreateEventScreen({super.key});
@@ -16,11 +19,15 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   final _formKey = GlobalKey<FormState>();
   final _eventService = EventService();
   final _medicationService = MedicationService();
-  
+  final _bluetoothService = BluetoothService();
+
   String _name = '';
   String? _description;
   DateTime? _takePillDate;
   Medication? _selectedMedication;
+  String _selectedFrequency = 'daily'; // 👈 Nouvelle variable
+  int _deviceStatus = Device.disconnected;
+  late StreamSubscription<int> _statusSubscription;
 
   List<Medication> _medications = [];
 
@@ -28,6 +35,17 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   void initState() {
     super.initState();
     _loadMedications();
+    _statusSubscription = _bluetoothService.statusStream.listen((status) {
+      setState(() {
+        _deviceStatus = status;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _statusSubscription.cancel();
+    super.dispose();
   }
 
   Future<void> _loadMedications() async {
@@ -41,25 +59,47 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     }
   }
 
+  String formatAlarmFromDateTime(DateTime dt) {
+    final hour = dt.hour.toString().padLeft(2, '0');
+    final minute = dt.minute.toString().padLeft(2, '0');
+    return "$hour,$minute,00";
+  }
+
   Future<void> _submitForm() async {
     if (_formKey.currentState!.validate() && _takePillDate != null && _selectedMedication != null) {
       _formKey.currentState!.save();
-      Event newEvent = Event(
-        id: 0,
+      NewEvent newEvent = NewEvent(
+        userId: 2,
         name: _name,
         description: _description ?? '',
-        author: 2,
-        creationDate: DateTime.now(),
+        frequency: _selectedFrequency,
+        isActive: true,
+        medicationId: _selectedMedication!.id,
         takePillDate: _takePillDate!,
-        medicationId: 0,
-        medication: _selectedMedication,
       );
+
       try {
         await _eventService.createEvent(newEvent);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Événement créé avec succès')),
-        );
-        Navigator.pop(context, 'success');
+
+        if (_deviceStatus == Device.connected) {
+          final formatted = formatAlarmFromDateTime(_takePillDate!);
+          try {
+            await _bluetoothService.write(formatted);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text("Événement créé et alarme envoyée : $formatted")),
+            );
+          } catch (e) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("Événement créé, mais erreur Bluetooth")),
+            );
+          }
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Événement créé (appareil non connecté)")),
+          );
+        }
+
+        Navigator.pop(context, true);
       } catch (error) {
         print('Erreur lors de la création de l\'événement: $error');
         ScaffoldMessenger.of(context).showSnackBar(
@@ -81,20 +121,25 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
             children: <Widget>[
               TextFormField(
                 decoration: const InputDecoration(labelText: 'Nom'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Veuillez entrer un nom';
-                  }
-                  return null;
-                },
-                onSaved: (value) {
-                  _name = value!;
-                },
+                validator: (value) =>
+                    value == null || value.isEmpty ? 'Veuillez entrer un nom' : null,
+                onSaved: (value) => _name = value!,
               ),
               TextFormField(
                 decoration: const InputDecoration(labelText: 'Description (optionnel)'),
-                onSaved: (value) {
-                  _description = value;
+                onSaved: (value) => _description = value,
+              ),
+              DropdownButtonFormField<String>(
+                decoration: const InputDecoration(labelText: 'Fréquence'),
+                value: _selectedFrequency,
+                items: const [
+                  DropdownMenuItem(value: 'daily', child: Text('Quotidien')),
+                  DropdownMenuItem(value: 'weekly', child: Text('Hebdomadaire')),
+                ],
+                onChanged: (value) {
+                  setState(() {
+                    _selectedFrequency = value!;
+                  });
                 },
               ),
               ListTile(
@@ -142,7 +187,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                     _selectedMedication = newValue;
                   });
                 },
-                validator: (value) => value == null ? 'Veuillez sélectionner un médicament' : null,
+                validator: (value) =>
+                    value == null ? 'Veuillez sélectionner un médicament' : null,
               ),
               const SizedBox(height: 20),
               ElevatedButton(

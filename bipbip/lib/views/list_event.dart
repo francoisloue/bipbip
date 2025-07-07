@@ -55,29 +55,32 @@ class _EventListViewState extends State<EventListView> {
                     ? DateFormat.Hm().format(event.takePillDate!)
                     : 'Heure non spécifiée';
                 String medicationName = event.medication?.name ?? 'Aucun médicament';
-                return Card(
-                  margin: const EdgeInsets.all(10),
-                  elevation: 5,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          event.name,
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 8),
-                        Text('Médicament : $medicationName'),
-                        Text('Heure de prise du médicament : $formattedDate'),
-                        if (event.description.isNotEmpty) ...[
+                if (events[index].isActive) {
+                  return Card(
+                    margin: const EdgeInsets.all(10),
+                    elevation: 5,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            event.name,
+                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
                           const SizedBox(height: 8),
-                          Text('Description : ${event.description}'),
+                          Text('Médicament : $medicationName'),
+                          Text('Heure de prise du médicament : $formattedDate'),
+                          if (event.description.isNotEmpty) ...[
+                            const SizedBox(height: 8),
+                            Text('Description : ${event.description}'),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
-                  ),
-                );
+                  );
+                }
+                return null;
               },
             );
           },

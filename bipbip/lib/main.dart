@@ -1,7 +1,8 @@
 import 'package:bipbip/views/list_event.dart';
 import 'package:bipbip/views/medication.dart';
-import 'package:flutter/material.dart';
 import 'package:bipbip/views/create_event.dart';
+import 'package:bipbip/views/bluetooth_page.dart'; // ✅ Import de la page Bluetooth
+import 'package:flutter/material.dart';
 
 void main() {
   runApp(const MyApp());
@@ -17,16 +18,16 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const EventListScreen(), // La vue principale est la liste des événements
+      home: const EventListScreen(),
       routes: {
-        '/create-medication': (context) => const CreateMedicationView(), // Route pour ajouter un médicament
-        '/create-event': (context) => const CreateEventScreen(), // Route pour ajouter un événement
+        '/create-medication': (context) => const CreateMedicationView(),
+        '/create-event': (context) => const CreateEventScreen(),
+        '/bluetooth': (context) => const BluetoothPage(), // ✅ Route Bluetooth
       },
     );
   }
 }
 
-// Écran principal : Liste des événements
 class EventListScreen extends StatefulWidget {
   const EventListScreen({super.key});
 
@@ -47,19 +48,22 @@ class _EventListScreenState extends State<EventListScreen> {
           IconButton(
             icon: const Icon(Icons.medical_services),
             onPressed: () {
-              // Naviguer vers la vue pour créer un nouveau médicament
               Navigator.pushNamed(context, '/create-medication');
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.bluetooth),
+            onPressed: () {
+              Navigator.pushNamed(context, '/bluetooth'); // ✅ Accès à la page Bluetooth
             },
           ),
         ],
       ),
-      body: const EventListView(userId: 2), // Remplacez l'ID de l'utilisateur si nécessaire
+      body: const EventListView(userId: 2),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          // Naviguer vers la vue pour créer un nouvel événement
           final result = await Navigator.pushNamed(context, '/create-event');
           if (result == 'success') {
-            // Rafraîchir la liste après la création d'un événement
             setState(() {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Événement ajouté avec succès')),

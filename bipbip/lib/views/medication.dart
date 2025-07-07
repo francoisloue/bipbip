@@ -13,16 +13,16 @@ class CreateMedicationView extends StatefulWidget {
 class _CreateMedicationViewState extends State<CreateMedicationView> {
   final _formKey = GlobalKey<FormState>();
 
-  // Instancier le contrôleur
-  final MedicationController _medicationController = MedicationController(MedicationService());
+  final MedicationController _medicationController =
+      MedicationController(MedicationService());
 
   final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _descriptionController = TextEditingController();
+  final TextEditingController _imageUrlController = TextEditingController();
+  final TextEditingController _noticeUrlController = TextEditingController();
 
   bool _isLoading = false;
   String? _errorMessage;
 
-  // Fonction pour envoyer le médicament en passant par le contrôleur
   Future<void> _createMedication() async {
     if (_formKey.currentState!.validate()) {
       setState(() {
@@ -33,18 +33,19 @@ class _CreateMedicationViewState extends State<CreateMedicationView> {
       final medication = Medication(
         id: 0,
         name: _nameController.text,
-        description: _descriptionController.text,
+        imageUrl: _imageUrlController.text,
+        noticeUrl: _noticeUrlController.text,
       );
 
       try {
-        // Utiliser le contrôleur pour créer le médicament
-        final createdMedication = await _medicationController.createMedication(medication);
+        final createdMedication =
+            await _medicationController.createMedication(medication);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Medication created: ${createdMedication.name}')),
         );
-        // Réinitialiser les champs du formulaire
         _nameController.clear();
-        _descriptionController.clear();
+        _imageUrlController.clear();
+        _noticeUrlController.clear();
       } catch (e) {
         setState(() {
           _errorMessage = 'Failed to create medication: $e';
@@ -55,6 +56,14 @@ class _CreateMedicationViewState extends State<CreateMedicationView> {
         });
       }
     }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _imageUrlController.dispose();
+    _noticeUrlController.dispose();
+    super.dispose();
   }
 
   @override
@@ -84,21 +93,33 @@ class _CreateMedicationViewState extends State<CreateMedicationView> {
               ),
               const SizedBox(height: 16),
               TextFormField(
-                controller: _descriptionController,
+                controller: _imageUrlController,
                 decoration: const InputDecoration(
-                  labelText: 'Description',
+                  labelText: 'Image URL',
                   border: OutlineInputBorder(),
                 ),
-                maxLines: 3,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please enter a description';
+                    return 'Please enter the image URL';
                   }
                   return null;
                 },
               ),
               const SizedBox(height: 16),
-
+              TextFormField(
+                controller: _noticeUrlController,
+                decoration: const InputDecoration(
+                  labelText: 'Notice URL',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter the notice URL';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
               if (_errorMessage != null) ...[
                 Text(
                   _errorMessage!,
@@ -106,7 +127,6 @@ class _CreateMedicationViewState extends State<CreateMedicationView> {
                 ),
                 const SizedBox(height: 16),
               ],
-
               ElevatedButton(
                 onPressed: _isLoading ? null : _createMedication,
                 child: _isLoading
@@ -118,12 +138,5 @@ class _CreateMedicationViewState extends State<CreateMedicationView> {
         ),
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _descriptionController.dispose();
-    super.dispose();
   }
 }

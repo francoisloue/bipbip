@@ -7,6 +7,6 @@ class MedicationController {
   MedicationController(this.medicationService);
 
   Future<Medication> createMedication(Medication medication) async {
-    return await medicationService.createObject(medication);
+    return await medicationService.createMedication(medication);
   }
 }

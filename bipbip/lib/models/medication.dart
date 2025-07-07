@@ -1,19 +1,22 @@
 class Medication {
   final int id;
   final String name;
-  final String? description;
+  final String? imageUrl;
+  final String? noticeUrl;
 
   Medication({
     required this.id,
     required this.name,
-    this.description,
+    this.imageUrl,
+    this.noticeUrl,
   });
 
   factory Medication.fromJson(Map<String, dynamic> json) {
     return Medication(
-      id: json['id'],
-      name: json['name'],
-      description: json['description'],
+      id: json['id'] ?? 0,
+      name: json['name'] ?? '',
+      imageUrl: json['image_url'],
+      noticeUrl: json['notice_url'],
     );
   }
 
@@ -21,7 +24,8 @@ class Medication {
     return {
       'id': id,
       'name': name,
-      'description': description,
+      'image_url': imageUrl,
+      'notice_url': noticeUrl,
     };
   }
 }

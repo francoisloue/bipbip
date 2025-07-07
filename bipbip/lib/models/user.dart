@@ -1,23 +1,28 @@
 class User {
-  final int id;
-  final String username;
-  final String? tokenJWT;
+  final String id;
+  final String name;
+  final String surname;
+  final int age;
+  final int weight;
+  final int height;
 
   User({
     required this.id,
-    required this.username,
-    required this.tokenJWT,
+    required this.name,
+    required this.surname,
+    required this.age,
+    required this.height,
+    required this.weight
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
       id: json['id'],
-      username: json['name'],
-      tokenJWT: null
+      name: json['name'],
+      surname: json['surname'],
+      age: json['age'],
+      height: json['height'],
+      weight: json['weight'],
     );
-  }
-  
-  set tokenJWT(String? token) {
-    tokenJWT = token;
   }
 }
