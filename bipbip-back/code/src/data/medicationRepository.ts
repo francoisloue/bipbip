@@ -1,4 +1,3 @@
-import { UpdateResult } from "kysely";
 import { NewMedication, Medication, UpdateMedication } from "../type/data/medications/medicationsTable";
 import { db } from "./database";
 
@@ -22,11 +21,12 @@ export async function createMedication(medication: NewMedication): Promise<Medic
         .executeTakeFirstOrThrow()
 }
 
-export async function updateMedication(id: number, updateWith: UpdateMedication): Promise<UpdateResult> {
-    return await db.updateTable('medications')
+export async function updateMedication(id: number, updateWith: UpdateMedication): Promise<Medication | undefined> {
+    await db.updateTable('medications')
         .set(updateWith)
         .where('id', '=', id)
         .executeTakeFirst()
+    return await getMedicationById(id);
 };
 
 export async function deleteMedication(id: number): Promise<Medication | undefined> {

@@ -26,4 +26,8 @@ class EventController {
   Future<void> addEvent(NewEvent event) async {
     await eventService.createEvent(event);
   }
+
+  Future<void> deleteEvent(int id) async {
+    await eventService.deleteEvent(id);
+  }
 }

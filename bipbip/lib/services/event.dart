@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:bipbip/models/event.dart';
 
 class EventService {
-  final String baseUrl = "http://172.20.10.2:8080/v1/bipbip";
+  final String baseUrl = "http://192.168.1.7:8080/v1/bipbip";
 
   Future<List<Event>> fetchUserEvents(int userId) async {
     final response = await http.get(Uri.parse('$baseUrl/event?user=2'));
@@ -35,6 +35,13 @@ class EventService {
       return Event.fromJson(decoded);
     } else {
       throw Exception('Erreur lors de la création de l’événement');
+    }
+  }
+
+  Future<void> deleteEvent(int id) async {
+    final response = await http.delete(Uri.parse('$baseUrl/event/$id'));
+    if (response.statusCode != 204) {
+      throw Exception('Erreur lors de la suppression de l’événement');
     }
   }
 }

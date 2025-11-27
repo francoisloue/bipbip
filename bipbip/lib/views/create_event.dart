@@ -25,7 +25,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   String? _description;
   DateTime? _takePillDate;
   Medication? _selectedMedication;
-  String _selectedFrequency = 'daily'; // 👈 Nouvelle variable
+  String _selectedFrequency = 'daily';
   int _deviceStatus = Device.disconnected;
   late StreamSubscription<int> _statusSubscription;
 
@@ -66,8 +66,11 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   }
 
   Future<void> _submitForm() async {
-    if (_formKey.currentState!.validate() && _takePillDate != null && _selectedMedication != null) {
+    if (_formKey.currentState!.validate() &&
+        _takePillDate != null &&
+        _selectedMedication != null) {
       _formKey.currentState!.save();
+
       NewEvent newEvent = NewEvent(
         userId: 2,
         name: _name,
@@ -88,20 +91,20 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text("Événement créé et alarme envoyée : $formatted")),
             );
-          } catch (e) {
+          } catch (_) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("Événement créé, mais erreur Bluetooth")),
+              const SnackBar(content: Text("Erreur Bluetooth lors de l'envoi de l'alarme")),
             );
           }
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Événement créé (appareil non connecté)")),
+            const SnackBar(content: Text("Événement créé (Bluetooth non connecté)")),
           );
         }
 
         Navigator.pop(context, true);
       } catch (error) {
-        print('Erreur lors de la création de l\'événement: $error');
+        print('Erreur lors de la création : $error');
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Erreur lors de la création')),
         );
@@ -113,89 +116,136 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Créer un événement')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: <Widget>[
-              TextFormField(
-                decoration: const InputDecoration(labelText: 'Nom'),
-                validator: (value) =>
-                    value == null || value.isEmpty ? 'Veuillez entrer un nom' : null,
-                onSaved: (value) => _name = value!,
-              ),
-              TextFormField(
-                decoration: const InputDecoration(labelText: 'Description (optionnel)'),
-                onSaved: (value) => _description = value,
-              ),
-              DropdownButtonFormField<String>(
-                decoration: const InputDecoration(labelText: 'Fréquence'),
-                value: _selectedFrequency,
-                items: const [
-                  DropdownMenuItem(value: 'daily', child: Text('Quotidien')),
-                  DropdownMenuItem(value: 'weekly', child: Text('Hebdomadaire')),
-                ],
-                onChanged: (value) {
-                  setState(() {
-                    _selectedFrequency = value!;
-                  });
-                },
-              ),
-              ListTile(
-                title: Text(_takePillDate == null
-                    ? 'Sélectionner la date et l\'heure de prise'
-                    : DateFormat('yyyy-MM-dd HH:mm').format(_takePillDate!)),
-                trailing: const Icon(Icons.calendar_today),
-                onTap: () async {
-                  DateTime? pickedDate = await showDatePicker(
-                    context: context,
-                    initialDate: DateTime.now(),
-                    firstDate: DateTime(2000),
-                    lastDate: DateTime(2101),
-                  );
-                  if (pickedDate != null) {
-                    TimeOfDay? pickedTime = await showTimePicker(
-                      context: context,
-                      initialTime: TimeOfDay.now(),
-                    );
-                    if (pickedTime != null) {
-                      setState(() {
-                        _takePillDate = DateTime(
-                          pickedDate.year,
-                          pickedDate.month,
-                          pickedDate.day,
-                          pickedTime.hour,
-                          pickedTime.minute,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              children: [
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: TextFormField(
+                      decoration: const InputDecoration(
+                        labelText: 'Nom de l’événement',
+                        border: InputBorder.none,
+                      ),
+                      validator: (value) =>
+                          value == null || value.isEmpty ? 'Nom requis' : null,
+                      onSaved: (value) => _name = value!,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: TextFormField(
+                      decoration: const InputDecoration(
+                        labelText: 'Description (facultatif)',
+                        border: InputBorder.none,
+                      ),
+                      onSaved: (value) => _description = value,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: DropdownButtonFormField<String>(
+                      decoration: const InputDecoration(
+                        labelText: 'Fréquence',
+                        border: InputBorder.none,
+                      ),
+                      value: _selectedFrequency,
+                      items: const [
+                        DropdownMenuItem(value: 'daily', child: Text('Quotidien')),
+                        DropdownMenuItem(value: 'weekly', child: Text('Hebdomadaire')),
+                      ],
+                      onChanged: (value) => setState(() {
+                        _selectedFrequency = value!;
+                      }),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Card(
+                  child: ListTile(
+                    title: Text(
+                      _takePillDate == null
+                          ? 'Choisir la date et l’heure'
+                          : DateFormat('yyyy-MM-dd – HH:mm').format(_takePillDate!),
+                    ),
+                    trailing: const Icon(Icons.calendar_today),
+                    onTap: () async {
+                      DateTime? date = await showDatePicker(
+                        context: context,
+                        initialDate: DateTime.now(),
+                        firstDate: DateTime(2000),
+                        lastDate: DateTime(2100),
+                      );
+                      if (date != null) {
+                        TimeOfDay? time = await showTimePicker(
+                          context: context,
+                          initialTime: TimeOfDay.now(),
                         );
-                      });
-                    }
-                  }
-                },
-              ),
-              DropdownButtonFormField<Medication>(
-                decoration: const InputDecoration(labelText: 'Médicament'),
-                value: _selectedMedication,
-                items: _medications.map((Medication medication) {
-                  return DropdownMenuItem<Medication>(
-                    value: medication,
-                    child: Text(medication.name),
-                  );
-                }).toList(),
-                onChanged: (Medication? newValue) {
-                  setState(() {
-                    _selectedMedication = newValue;
-                  });
-                },
-                validator: (value) =>
-                    value == null ? 'Veuillez sélectionner un médicament' : null,
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _submitForm,
-                child: const Text('Créer l\'événement'),
-              ),
-            ],
+                        if (time != null) {
+                          setState(() {
+                            _takePillDate = DateTime(
+                              date.year,
+                              date.month,
+                              date.day,
+                              time.hour,
+                              time.minute,
+                            );
+                          });
+                        }
+                      }
+                    },
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: DropdownButtonFormField<Medication>(
+                      decoration: const InputDecoration(
+                        labelText: 'Médicament',
+                        border: InputBorder.none,
+                      ),
+                      value: _selectedMedication,
+                      items: _medications.map((med) {
+                        return DropdownMenuItem(
+                          value: med,
+                          child: Text(med.name),
+                        );
+                      }).toList(),
+                      onChanged: (newValue) => setState(() {
+                        _selectedMedication = newValue;
+                      }),
+                      validator: (value) =>
+                          value == null ? 'Veuillez sélectionner un médicament' : null,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 30),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _submitForm,
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text("Créer l'événement", style: TextStyle(fontSize: 16)),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

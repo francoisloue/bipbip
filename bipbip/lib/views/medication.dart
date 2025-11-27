@@ -1,3 +1,4 @@
+import 'package:bipbip/models/newMedication.dart';
 import 'package:flutter/material.dart';
 import '../controllers/medication_controller.dart';
 import '../models/medication.dart';
@@ -30,8 +31,7 @@ class _CreateMedicationViewState extends State<CreateMedicationView> {
         _errorMessage = null;
       });
 
-      final medication = Medication(
-        id: 0,
+      final newMedication = NewMedication(
         name: _nameController.text,
         imageUrl: _imageUrlController.text,
         noticeUrl: _noticeUrlController.text,
@@ -39,7 +39,7 @@ class _CreateMedicationViewState extends State<CreateMedicationView> {
 
       try {
         final createdMedication =
-            await _medicationController.createMedication(medication);
+            await _medicationController.createMedication(newMedication);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Medication created: ${createdMedication.name}')),
         );
