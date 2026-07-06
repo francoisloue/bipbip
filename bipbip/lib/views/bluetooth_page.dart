@@ -96,6 +96,25 @@ class _BluetoothPageState extends State<BluetoothPage> {
     }
   }
 
+  Widget _rssiIndicator(int rssi) {
+    final bars = rssi >= -50 ? 4 : rssi >= -65 ? 3 : rssi >= -80 ? 2 : rssi >= -90 ? 1 : 0;
+    final color = bars >= 3 ? Colors.green : bars >= 2 ? Colors.orange : Colors.red;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(4, (i) {
+        return Container(
+          width: 4,
+          height: 6 + i * 3,
+          margin: const EdgeInsets.symmetric(horizontal: 1),
+          decoration: BoxDecoration(
+            color: i < bars ? color : Colors.grey.shade300,
+            borderRadius: BorderRadius.circular(1),
+          ),
+        );
+      }),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -150,19 +169,46 @@ class _BluetoothPageState extends State<BluetoothPage> {
             ),
             const SizedBox(height: 10),
             Expanded(
-              child: ListView.builder(
+              child: _scanResults.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.bluetooth_searching, size: 48, color: Colors.grey.shade400),
+                          const SizedBox(height: 12),
+                          Text("Aucun appareil trouvé",
+                              style: TextStyle(fontSize: 16, color: Colors.grey.shade600)),
+                          const SizedBox(height: 4),
+                          Text("Appuie sur Actualiser pour lancer un scan",
+                              style: TextStyle(fontSize: 13, color: Colors.grey.shade500)),
+                        ],
+                      ),
+                    )
+                  : ListView.builder(
                 itemCount: _scanResults.length,
                 itemBuilder: (_, i) {
                   final r = _scanResults[i];
                   final name = r.device.platformName.isEmpty ? "Inconnu" : r.device.platformName;
+                  final isConnected = _connectedDevice?.remoteId == r.device.remoteId;
                   return Card(
                     child: ListTile(
+                      leading: isConnected
+                          ? const Icon(Icons.link, color: Colors.green)
+                          : null,
                       title: Text(name),
-                      subtitle: Text(r.device.remoteId.toString()),
-                      trailing: ElevatedButton(
-                        onPressed: () => _connect(r.device),
-                        child: const Text("Connecter"),
+                      subtitle: Row(
+                        children: [
+                          _rssiIndicator(r.rssi),
+                          const SizedBox(width: 6),
+                          Text('${r.rssi} dBm', style: TextStyle(fontSize: 13, color: Colors.grey.shade600)),
+                        ],
                       ),
+                      trailing: isConnected
+                          ? const Icon(Icons.check, color: Colors.green)
+                          : ElevatedButton(
+                            onPressed: () => _connect(r.device),
+                            child: const Text("Connecter"),
+                          ),
                     ),
                   );
                 },

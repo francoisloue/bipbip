@@ -62,7 +62,20 @@ class _EventListViewState extends State<EventListView> {
             } else if (snapshot.hasError) {
               return Center(child: Text('Error list: ${snapshot.error}'));
             } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-              return const Center(child: Text('No events found.'));
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.event_busy, size: 64, color: Colors.grey.shade400),
+                    const SizedBox(height: 16),
+                    Text("Aucun événement",
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.grey.shade600)),
+                    const SizedBox(height: 8),
+                    Text("Crée ton premier rappel avec le bouton +",
+                        style: TextStyle(fontSize: 14, color: Colors.grey.shade500)),
+                  ],
+                ),
+              );
             }
 
             final events = snapshot.data!;
@@ -114,20 +127,18 @@ class _EventListViewState extends State<EventListView> {
                   ),
                 ],
                 if (dailyEvents.isNotEmpty) ...[
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: Text("Prises quotidiennes",
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold)),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Text("Prises quotidiennes (${dailyEvents.length})",
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   ),
                   ...dailyEvents.map((e) => _buildEventCard(e)),
                 ],
                 if (weeklyEvents.isNotEmpty) ...[
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: Text("Prises hebdomadaires",
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold)),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Text("Prises hebdomadaires (${weeklyEvents.length})",
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   ),
                   ...weeklyEvents.map((e) => _buildEventCard(e)),
                 ],
@@ -149,6 +160,45 @@ class _EventListViewState extends State<EventListView> {
     );
   }
 
+  Widget _timeRemainingBadge(DateTime date) {
+    final diff = date.difference(DateTime.now());
+    String label;
+    Color bgColor;
+    Color textColor;
+
+    if (diff.isNegative) {
+      label = 'En retard';
+      bgColor = Colors.red.shade50;
+      textColor = Colors.red.shade700;
+    } else if (diff.inDays > 0) {
+      label = 'Dans ${diff.inDays} jour${diff.inDays > 1 ? 's' : ''}';
+      bgColor = Colors.blue.shade50;
+      textColor = Colors.blue.shade700;
+    } else if (diff.inHours > 0) {
+      final minutes = diff.inMinutes % 60;
+      label = 'Dans ${diff.inHours}h${minutes > 0 ? minutes.toString().padLeft(2, '0') : ''}';
+      bgColor = diff.inHours < 6 ? Colors.orange.shade50 : Colors.green.shade50;
+      textColor = diff.inHours < 6 ? Colors.orange.shade700 : Colors.green.shade700;
+    } else if (diff.inMinutes > 0) {
+      label = 'Dans ${diff.inMinutes} min';
+      bgColor = Colors.green.shade50;
+      textColor = Colors.green.shade700;
+    } else {
+      label = 'Maintenant';
+      bgColor = Colors.red.shade50;
+      textColor = Colors.red.shade700;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: textColor)),
+    );
+  }
+
   Widget _buildEventCard(Event event, {bool isEmbedded = false}) {
     final timeStr = event.takePillDate != null
         ? DateFormat.Hm().format(event.takePillDate!)
@@ -158,6 +208,7 @@ class _EventListViewState extends State<EventListView> {
         : '';
     final imageUrl = event.medication?.imageUrl;
     final medName = event.medication?.name ?? '';
+    final dosage = event.medication?.dosageSummary ?? '';
 
     final cardContent = Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -166,9 +217,21 @@ class _EventListViewState extends State<EventListView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(timeStr,
-                  style: const TextStyle(
-                      fontSize: 42, fontWeight: FontWeight.bold)),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(timeStr,
+                      style: const TextStyle(
+                          fontSize: 42, fontWeight: FontWeight.bold)),
+                  const SizedBox(width: 10),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: event.takePillDate != null
+                        ? _timeRemainingBadge(event.takePillDate!)
+                        : const SizedBox(),
+                  ),
+                ],
+              ),
               if (dateStr.isNotEmpty)
                 Text(dateStr,
                     style:
@@ -180,6 +243,12 @@ class _EventListViewState extends State<EventListView> {
               if (medName.isNotEmpty)
                 Text('Médicament : $medName',
                     style: const TextStyle(fontSize: 14)),
+              if (isEmbedded && dosage.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Text(dosage,
+                      style: TextStyle(fontSize: 13, color: Colors.blue.shade700, fontWeight: FontWeight.w500)),
+                ),
               if (event.description.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(top: 4),

@@ -206,6 +206,34 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                     },
                   ),
                 ),
+                if (_selectedMedication != null) ...[
+                  const SizedBox(height: 8),
+                  _buildCard(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.check_circle, color: Colors.green),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(_selectedMedication!.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+                                if (_selectedMedication!.dosageSummary.isNotEmpty)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 2),
+                                    child: Text(_selectedMedication!.dosageSummary, style: TextStyle(fontSize: 13, color: Colors.grey.shade600)),
+                                  ),
+                                Text(_selectedMedication!.formePharmaceutique, style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 30),
                 SizedBox(
                   width: double.infinity,
