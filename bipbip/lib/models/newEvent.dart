@@ -1,4 +1,5 @@
 class NewEvent {
+  final int? id;
   final int userId;
   final String name;
   final String description;
@@ -8,6 +9,7 @@ class NewEvent {
   final DateTime? takePillDate;
 
   NewEvent({
+    this.id,
     required this.userId,
     required this.name,
     required this.description,
@@ -19,6 +21,7 @@ class NewEvent {
 
   factory NewEvent.fromJson(Map<String, dynamic> json) {
     return NewEvent(
+      id: json['id'],
       userId: json['user_id'],
       name: json['name'],
       description: json['description'],
@@ -33,6 +36,7 @@ class NewEvent {
 
   Map<String, dynamic> toJson() {
     return {
+      if (id != null) 'id': id,
       'user_id': userId,
       'name': name,
       'description': description,

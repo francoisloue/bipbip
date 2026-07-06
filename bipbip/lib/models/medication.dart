@@ -19,6 +19,7 @@ class Medication {
   final int id;
   final String name;
   final String? imageUrl;
+  final String? noticeUrl;
   final String formePharmaceutique;
   final List<Composition> composition;
 
@@ -26,6 +27,7 @@ class Medication {
     required this.id,
     required this.name,
     this.imageUrl,
+    this.noticeUrl,
     required this.formePharmaceutique,
     this.composition = const [],
   });
@@ -44,6 +46,7 @@ class Medication {
       id: json['cis'] ?? 0,
       name: json['elementPharmaceutique'] ?? '',
       imageUrl: json['image_url'],
+      noticeUrl: json['notice_url'],
       formePharmaceutique: json['formePharmaceutique'] ?? '',
       composition: compositionList,
     );
@@ -53,6 +56,8 @@ class Medication {
     return {
       'cis': id,
       'elementPharmaceutique': name,
+      'image_url': imageUrl,
+      'notice_url': noticeUrl,
       'formePharmaceutique': formePharmaceutique,
       'composition': composition.map((c) => {
         'denominationSubstance': c.denominationSubstance,

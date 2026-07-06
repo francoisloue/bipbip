@@ -39,6 +39,21 @@ class EventService {
     }
   }
 
+  Future<Event> updateEvent(NewEvent event) async {
+    final response = await http.put(
+      Uri.parse('$baseUrl/event/${event.id}'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(event.toJson()),
+    );
+
+    if (response.statusCode == 200) {
+      final decoded = jsonDecode(response.body);
+      return Event.fromJson(decoded);
+    } else {
+      throw Exception('Erreur lors de la mise à jour de l’événement');
+    }
+  }
+
   Future<void> deleteEvent(int id) async {
     final response = await http.delete(Uri.parse('$baseUrl/event/$id'));
     if (response.statusCode != 204) {
