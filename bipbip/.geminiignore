@@ -1,0 +1,43 @@
+# --- Flutter/Dart internals ---
+.dart_tool/
+.packages
+.pub-cache/
+.flutter-plugins
+.flutter-plugins-dependencies
+build/
+
+# --- Platform-specific generated folders ---
+# (Ignore these unless you are specifically auditing native code)
+android/
+ios/
+linux/
+macos/
+windows/
+web/
+
+# --- Dependency Lock files ---
+# (These are very long and usually not needed for logic audits)
+pubspec.lock
+
+# --- IDE & System files ---
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# --- Assets ---
+# (AI cannot "read" these files in a text-based CLI audit)
+assets/
+fonts/
+images/
+*.png
+*.jpg
+*.jpeg
+*.svg
+*.ttf
+
+# --- Secrets & Environment ---
+.env*
+*.keystore
+*.jks

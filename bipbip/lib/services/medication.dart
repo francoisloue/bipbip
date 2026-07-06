@@ -4,14 +4,15 @@ import 'package:http/http.dart' as http;
 import 'package:bipbip/models/medication.dart';
 
 class MedicationService {
-  final String baseUrl = "http://192.168.1.7:8080/v1/bipbip";
+  final String baseUrl = "http://10.60.116.151:8080/v1/bipbip";
 
   Future<List<Medication>> getMedications() async {
-    final response = await http.get(Uri.parse('$baseUrl/medication'));
+    final response = await http.get(Uri.parse('$baseUrl/medication'))
+        .timeout(const Duration(seconds: 5));
 
     if (response.statusCode == 200) {
       final decoded = jsonDecode(response.body);
-      final List<dynamic> list = decoded['medications'];
+      final List<dynamic> list = decoded['medications'] ?? [];
       return list.map((m) => Medication.fromJson(m)).toList();
     } else {
       throw Exception("Impossible de récupérer les médicaments ");
@@ -19,11 +20,15 @@ class MedicationService {
   }
 
   Future<Medication?> getMedicationById(int id) async {
-    final response = await http.get(Uri.parse('$baseUrl/medication/$id'));
+    final response = await http.get(Uri.parse('$baseUrl/medication/$id'))
+        .timeout(const Duration(seconds: 5));
 
     if (response.statusCode == 200) {
       final decoded = jsonDecode(response.body);
-      return Medication.fromJson(decoded['medications']);
+      if (decoded['medications'] != null) {
+        return Medication.fromJson(decoded['medications']);
+      }
+      return null;
     } else {
       return null;
     }
@@ -34,13 +39,28 @@ class MedicationService {
       Uri.parse('$baseUrl/medication'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(medication.toJson()),
-    );
+    ).timeout(const Duration(seconds: 5));
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       final decoded = jsonDecode(response.body);
       return Medication.fromJson(decoded);
     } else {
       throw Exception('Erreur lors de la création du médicament');
+    }
+  }
+
+  Future<List<Medication>> searchMedications(String medicationName) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/medication?name=$medicationName'),
+      headers: {'Content-Type': 'application/json'},
+    ).timeout(const Duration(seconds: 5));
+    
+    if (response.statusCode == 200) {
+      final decoded = jsonDecode(response.body);
+      final List<dynamic> list = decoded['medications'] ?? [];
+      return list.map((m) => Medication.fromJson(m)).toList();
+    } else {
+      throw Exception('Erreur lors de la recherche des médicaments');
     }
   }
 }

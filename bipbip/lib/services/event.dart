@@ -4,24 +4,25 @@ import 'package:http/http.dart' as http;
 import 'package:bipbip/models/event.dart';
 
 class EventService {
-  final String baseUrl = "http://192.168.1.7:8080/v1/bipbip";
+  final String baseUrl = "http://10.60.116.151:8080/v1/bipbip";
 
   Future<List<Event>> fetchUserEvents(int userId) async {
-    final response = await http.get(Uri.parse('$baseUrl/event?user=2'));
+    final response = await http.get(Uri.parse('$baseUrl/event/user/$userId'))
+        .timeout(const Duration(seconds: 5));
 
     if (response.statusCode == 200) {
       try {
         final decoded = jsonDecode(response.body);
-        final List<dynamic> list = decoded['events'];
+        final List<dynamic> list = decoded['events'] ?? [];
         return list.map((e) => Event.fromJson(e)).toList();
       } catch (e) {
-        print('Erreur de parsing Event : $e');
         throw Exception('Erreur parsing event: $e');
       }
     } else {
       throw Exception('Erreur lors du chargement des événements');
     }
   }
+
 
   Future<Event> createEvent(NewEvent event) async {
     final response = await http.post(

@@ -1,7 +1,6 @@
 import 'package:bipbip/models/newMedication.dart';
 import 'package:flutter/material.dart';
 import '../controllers/medication_controller.dart';
-import '../models/medication.dart';
 import '../services/medication.dart';
 
 class CreateMedicationView extends StatefulWidget {

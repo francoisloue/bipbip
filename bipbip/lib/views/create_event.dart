@@ -1,68 +1,38 @@
+import 'dart:async';
 import 'package:bipbip/models/newEvent.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:bipbip/models/medication.dart';
 import 'package:bipbip/services/event.dart';
 import 'package:bipbip/services/medication.dart';
-import 'package:bipbip/services/bluetooth_service.dart';
-import 'dart:async';
-import 'package:bluetooth_classic/models/device.dart';
+import 'package:bipbip/controllers/ble_sync_controller.dart';
 
 class CreateEventScreen extends StatefulWidget {
   const CreateEventScreen({super.key});
 
   @override
-  _CreateEventScreenState createState() => _CreateEventScreenState();
+  State<CreateEventScreen> createState() => _CreateEventScreenState();
 }
 
 class _CreateEventScreenState extends State<CreateEventScreen> {
   final _formKey = GlobalKey<FormState>();
   final _eventService = EventService();
   final _medicationService = MedicationService();
-  final _bluetoothService = BluetoothService();
+  final _bleService = BleService();
 
   String _name = '';
   String? _description;
   DateTime? _takePillDate;
   Medication? _selectedMedication;
   String _selectedFrequency = 'daily';
-  int _deviceStatus = Device.disconnected;
-  late StreamSubscription<int> _statusSubscription;
 
-  List<Medication> _medications = [];
-
-  @override
-  void initState() {
-    super.initState();
-    _loadMedications();
-    _statusSubscription = _bluetoothService.statusStream.listen((status) {
-      setState(() {
-        _deviceStatus = status;
-      });
-    });
-  }
+  // Timer pour le debouncing
+  Timer? _debounce;
 
   @override
   void dispose() {
-    _statusSubscription.cancel();
+    _debounce?.cancel();
     super.dispose();
-  }
-
-  Future<void> _loadMedications() async {
-    try {
-      List<Medication> medications = await _medicationService.getMedications();
-      setState(() {
-        _medications = medications;
-      });
-    } catch (error) {
-      print('Failed to load medications: $error');
-    }
-  }
-
-  String formatAlarmFromDateTime(DateTime dt) {
-    final hour = dt.hour.toString().padLeft(2, '0');
-    final minute = dt.minute.toString().padLeft(2, '0');
-    return "$hour,$minute,00";
   }
 
   Future<void> _submitForm() async {
@@ -72,7 +42,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
       _formKey.currentState!.save();
 
       NewEvent newEvent = NewEvent(
-        userId: 2,
+        userId: 2, // Hardcoded for MVP
         name: _name,
         description: _description ?? '',
         frequency: _selectedFrequency,
@@ -83,32 +53,37 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
 
       try {
         await _eventService.createEvent(newEvent);
-
-        if (_deviceStatus == Device.connected) {
-          final formatted = formatAlarmFromDateTime(_takePillDate!);
+        
+        // Envoi automatique à l'ESP32 si connecté
+        final connectedDevice = _bleService.getConnectedDevice();
+        if (connectedDevice != null) {
+          final hour = newEvent.takePillDate?.hour.toString().padLeft(2, '0');
+          final minute = newEvent.takePillDate?.minute.toString().padLeft(2, '0');
+          final second = newEvent.takePillDate?.second.toString().padLeft(2, '0');
+          
           try {
-            await _bluetoothService.write(formatted);
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text("Événement créé et alarme envoyée : $formatted")),
-            );
-          } catch (_) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("Erreur Bluetooth lors de l'envoi de l'alarme")),
-            );
+            await _bleService.write("$hour,$minute,$second");
+          } catch (e) {
+            print("Erreur envoi BLE auto : $e");
           }
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Événement créé (Bluetooth non connecté)")),
-          );
         }
 
+        if (!context.mounted) return;
         Navigator.pop(context, true);
       } catch (error) {
-        print('Erreur lors de la création : $error');
+        if (!context.mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Erreur lors de la création')),
+          SnackBar(content: Text('Erreur lors de la création : $error')),
         );
       }
+    } else if (_takePillDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Veuillez choisir une date et une heure')),
+      );
+    } else if (_selectedMedication == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Veuillez sélectionner un médicament')),
+      );
     }
   }
 
@@ -123,67 +98,60 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
             key: _formKey,
             child: Column(
               children: [
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: TextFormField(
-                      decoration: const InputDecoration(
-                        labelText: 'Nom de l’événement',
-                        border: InputBorder.none,
-                      ),
-                      validator: (value) =>
-                          value == null || value.isEmpty ? 'Nom requis' : null,
-                      onSaved: (value) => _name = value!,
+                _buildCard(
+                  child: TextFormField(
+                    decoration: const InputDecoration(
+                      labelText: 'Nom de l’événement',
+                      border: InputBorder.none,
+                      icon: Icon(Icons.event),
                     ),
+                    validator: (value) =>
+                        value == null || value.isEmpty ? 'Nom requis' : null,
+                    onSaved: (value) => _name = value!,
                   ),
                 ),
                 const SizedBox(height: 12),
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: TextFormField(
-                      decoration: const InputDecoration(
-                        labelText: 'Description (facultatif)',
-                        border: InputBorder.none,
-                      ),
-                      onSaved: (value) => _description = value,
+                _buildCard(
+                  child: TextFormField(
+                    decoration: const InputDecoration(
+                      labelText: 'Description (facultatif)',
+                      border: InputBorder.none,
+                      icon: Icon(Icons.description),
                     ),
+                    onSaved: (value) => _description = value,
                   ),
                 ),
                 const SizedBox(height: 12),
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: DropdownButtonFormField<String>(
-                      decoration: const InputDecoration(
-                        labelText: 'Fréquence',
-                        border: InputBorder.none,
-                      ),
-                      value: _selectedFrequency,
-                      items: const [
-                        DropdownMenuItem(value: 'daily', child: Text('Quotidien')),
-                        DropdownMenuItem(value: 'weekly', child: Text('Hebdomadaire')),
-                      ],
-                      onChanged: (value) => setState(() {
-                        _selectedFrequency = value!;
-                      }),
+                _buildCard(
+                  child: DropdownButtonFormField<String>(
+                    decoration: const InputDecoration(
+                      labelText: 'Fréquence',
+                      border: InputBorder.none,
+                      icon: Icon(Icons.repeat),
                     ),
+                    value: _selectedFrequency,
+                    items: const [
+                      DropdownMenuItem(value: 'daily', child: Text('Quotidien')),
+                      DropdownMenuItem(value: 'weekly', child: Text('Hebdomadaire')),
+                    ],
+                    onChanged: (value) => setState(() => _selectedFrequency = value!),
                   ),
                 ),
                 const SizedBox(height: 12),
-                Card(
+                _buildCard(
                   child: ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.access_time),
                     title: Text(
                       _takePillDate == null
                           ? 'Choisir la date et l’heure'
                           : DateFormat('yyyy-MM-dd – HH:mm').format(_takePillDate!),
                     ),
-                    trailing: const Icon(Icons.calendar_today),
                     onTap: () async {
                       DateTime? date = await showDatePicker(
                         context: context,
                         initialDate: DateTime.now(),
-                        firstDate: DateTime(2000),
+                        firstDate: DateTime.now(),
                         lastDate: DateTime(2100),
                       );
                       if (date != null) {
@@ -194,12 +162,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                         if (time != null) {
                           setState(() {
                             _takePillDate = DateTime(
-                              date.year,
-                              date.month,
-                              date.day,
-                              time.hour,
-                              time.minute,
-                            );
+                              date.year, date.month, date.day, time.hour, time.minute);
                           });
                         }
                       }
@@ -207,27 +170,40 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: DropdownButtonFormField<Medication>(
-                      decoration: const InputDecoration(
-                        labelText: 'Médicament',
-                        border: InputBorder.none,
-                      ),
-                      value: _selectedMedication,
-                      items: _medications.map((med) {
-                        return DropdownMenuItem(
-                          value: med,
-                          child: Text(med.name),
-                        );
-                      }).toList(),
-                      onChanged: (newValue) => setState(() {
-                        _selectedMedication = newValue;
-                      }),
-                      validator: (value) =>
-                          value == null ? 'Veuillez sélectionner un médicament' : null,
-                    ),
+                _buildCard(
+                  child: Autocomplete<Medication>(
+                    displayStringForOption: (Medication m) => m.name,
+                    optionsBuilder: (TextEditingValue textEditingValue) async {
+                      if (textEditingValue.text.isEmpty) {
+                        return const Iterable<Medication>.empty();
+                      }
+                      final completer = Completer<Iterable<Medication>>();
+                      _debounce?.cancel();
+                      _debounce = Timer(const Duration(milliseconds: 600), () async {
+                        try {
+                          final results = await _medicationService.searchMedications(textEditingValue.text);
+                          completer.complete(results);
+                        } catch (e) {
+                          completer.complete(const Iterable<Medication>.empty());
+                        }
+                      });
+
+                      return completer.future;
+                    },
+                    onSelected: (Medication selection) {
+                      setState(() => _selectedMedication = selection);
+                    },
+                    fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+                      return TextFormField(
+                        controller: controller,
+                        focusNode: focusNode,
+                        decoration: const InputDecoration(
+                          labelText: 'Rechercher un médicament',
+                          border: InputBorder.none,
+                          icon: Icon(Icons.medical_services),
+                        ),
+                      );
+                    },
                   ),
                 ),
                 const SizedBox(height: 30),
@@ -237,17 +213,28 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                     onPressed: _submitForm,
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                      backgroundColor: Colors.blue.shade600,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
-                    child: const Text("Créer l'événement", style: TextStyle(fontSize: 16)),
+                    child: const Text("Créer l'événement", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   ),
                 ),
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildCard({required Widget child}) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        child: child,
       ),
     );
   }

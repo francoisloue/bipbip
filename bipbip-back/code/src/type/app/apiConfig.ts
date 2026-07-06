@@ -8,6 +8,7 @@ export type ApiConfig = {
   env: string;
   pathToOpenapiConfig: string;
   dataBaseCredentials: DataBaseCredentials;
+  medicationApiUrl: string
 };
 
 type DataBaseCredentials = {

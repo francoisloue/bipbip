@@ -1,6 +1,7 @@
+import 'package:bipbip/controllers/ble_sync_controller.dart';
+import 'package:bipbip/services/event.dart';
 import 'package:flutter/material.dart';
-import 'package:bluetooth_classic/models/device.dart';
-import 'package:bipbip/services/bluetooth_service.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'dart:async';
 
 class BluetoothPage extends StatefulWidget {
@@ -11,108 +12,156 @@ class BluetoothPage extends StatefulWidget {
 }
 
 class _BluetoothPageState extends State<BluetoothPage> {
-  final BluetoothService _bt = BluetoothService();
-  late StreamSubscription<int> _statusSub;
+  final BleService _bleService = BleService();
+  final BleSyncController _syncController = BleSyncController();
+  final EventService _eventService = EventService();
 
-  List<Device> _devices = [];
-  int _deviceStatus = Device.disconnected;
+  List<ScanResult> _scanResults = [];
+  late StreamSubscription<List<ScanResult>> _scanSubscription;
+  bool _isScanning = false;
+  BluetoothDevice? _connectedDevice;
 
   @override
   void initState() {
     super.initState();
-    _statusSub = _bt.statusStream.listen((status) {
-      setState(() => _deviceStatus = status);
+    _scanSubscription = _bleService.scanResults.listen((results) {
+      setState(() => _scanResults = results);
     });
+
+    FlutterBluePlus.isScanning.listen((scanning) {
+      setState(() => _isScanning = scanning);
+    });
+
+    final connectedDevices = FlutterBluePlus.connectedDevices;
+    if (connectedDevices.isNotEmpty) {
+      setState(() => _connectedDevice = connectedDevices.first);
+    }
   }
 
   @override
   void dispose() {
-    _statusSub.cancel();
+    _scanSubscription.cancel();
     super.dispose();
   }
 
-  Future<void> _getDevices() async {
-    final res = await _bt.getPairedDevices();
-    setState(() => _devices = res);
+  Future<void> _startScan() async {
+    setState(() => _scanResults.clear());
+    await _bleService.startScan();
   }
 
-  Future<void> _resetAlarms() async {
+  Future<void> _connect(BluetoothDevice device) async {
     try {
-      await _bt.write("reset");
+      await _bleService.connect(device);
+      setState(() => _connectedDevice = device);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Alarmes réinitialisées.")),
+        SnackBar(content: Text("Connecté à ${device.platformName}")),
       );
-    } catch (_) {
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Erreur Bluetooth.")),
+        SnackBar(content: Text("Erreur de connexion : $e")),
+      );
+    }
+  }
+
+  Future<void> _syncEvents() async {
+    if (_connectedDevice == null) return;
+
+    try {
+      final events = await _eventService.fetchUserEvents(2);
+      await _syncController.syncToDevice(_connectedDevice!, events);
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Synchronisation réussie !")),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Erreur de synchronisation : $e")),
+      );
+    }
+  }
+
+  Future<void> _testBeep() async {
+    if (_connectedDevice == null) return;
+    try {
+      await _bleService.write("on");
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Bip dans 5s envoyé !")),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Erreur : $e")),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isConnected = _deviceStatus == Device.connected;
-
     return Scaffold(
-      appBar: AppBar(title: const Text('Gestion du Bluetooth')),
+      appBar: AppBar(title: const Text('Gestion du Bluetooth (BLE)')),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              isConnected ? "✅ Appareil connecté" : "❌ Aucun appareil connecté",
-              style: TextStyle(
-                fontSize: 18,
-                color: isConnected ? Colors.green : Colors.red,
-                fontWeight: FontWeight.bold,
+            if (_connectedDevice != null) ...[
+              Text(
+                "✅ Connecté à : ${_connectedDevice!.platformName}",
+                style: const TextStyle(fontSize: 18, color: Colors.green, fontWeight: FontWeight.bold),
               ),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: _bt.initPermissions,
-              icon: const Icon(Icons.lock_open),
-              label: const Text("Autoriser le Bluetooth"),
-            ),
-            const SizedBox(height: 10),
-            ElevatedButton.icon(
-              onPressed: _getDevices,
-              icon: const Icon(Icons.devices),
-              label: const Text("Afficher les appareils appairés"),
-            ),
-            const SizedBox(height: 10),
-            if (isConnected)
+              const SizedBox(height: 10),
               ElevatedButton.icon(
-                onPressed: _resetAlarms,
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                icon: const Icon(Icons.restart_alt),
-                label: const Text("Réinitialiser les alarmes"),
+                onPressed: _syncEvents,
+                icon: const Icon(Icons.sync),
+                label: const Text("Synchroniser les alarmes (24h)"),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.blue.shade100),
               ),
-            const SizedBox(height: 10),
-            if (isConnected)
+              const SizedBox(height: 10),
               ElevatedButton.icon(
-                onPressed: _bt.disconnect,
+                onPressed: _testBeep,
+                icon: const Icon(Icons.notifications_active),
+                label: const Text("TEST +5s"),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.orange.shade100),
+              ),
+              const SizedBox(height: 10),
+              ElevatedButton.icon(
+                onPressed: () async {
+                  await _bleService.disconnect(_connectedDevice!);
+                  setState(() => _connectedDevice = null);
+                },
                 icon: const Icon(Icons.link_off),
-                label: const Text("Déconnecter l’appareil"),
+                label: const Text("Déconnecter"),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade100),
               ),
+            ] else ...[
+              const Text("❌ Aucun appareil connecté", style: TextStyle(fontSize: 18, color: Colors.red)),
+            ],
             const SizedBox(height: 20),
-            const Text("Appareils disponibles :", style: TextStyle(fontSize: 16)),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text("Appareils BLE à proximité :", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                if (_isScanning)
+                  const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                else
+                  IconButton(onPressed: _startScan, icon: const Icon(Icons.refresh)),
+              ],
+            ),
             const SizedBox(height: 10),
             Expanded(
               child: ListView.builder(
-                itemCount: _devices.length,
+                itemCount: _scanResults.length,
                 itemBuilder: (_, i) {
-                  final d = _devices[i];
+                  final r = _scanResults[i];
+                  final name = r.device.platformName.isEmpty ? "Inconnu" : r.device.platformName;
                   return Card(
                     child: ListTile(
-                      title: Text(d.name ?? 'Sans nom'),
-                      subtitle: Text(d.address),
+                      title: Text(name),
+                      subtitle: Text(r.device.remoteId.toString()),
                       trailing: ElevatedButton(
-                        onPressed: () async {
-                          await _bt.connect(d.address);
-                          setState(() => _devices.clear());
-                        },
-                        child: const Text("Se connecter"),
+                        onPressed: () => _connect(r.device),
+                        child: const Text("Connecter"),
                       ),
                     ),
                   );

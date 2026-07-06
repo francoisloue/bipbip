@@ -1,7 +1,6 @@
 import 'package:bipbip/views/list_event.dart';
-import 'package:bipbip/views/medication.dart';
 import 'package:bipbip/views/create_event.dart';
-import 'package:bipbip/views/bluetooth_page.dart'; // ✅ Import de la page Bluetooth
+import 'package:bipbip/views/bluetooth_page.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -14,15 +13,14 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Medication & Events App',
+      title: 'Events App',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
       home: const EventListScreen(),
       routes: {
-        '/create-medication': (context) => const CreateMedicationView(),
         '/create-event': (context) => const CreateEventScreen(),
-        '/bluetooth': (context) => const BluetoothPage(), // ✅ Route Bluetooth
+        '/bluetooth': (context) => const BluetoothPage(),
       },
     );
   }
@@ -46,15 +44,9 @@ class _EventListScreenState extends State<EventListScreen> {
         title: const Text('Mes événements'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.medical_services),
-            onPressed: () {
-              Navigator.pushNamed(context, '/create-medication');
-            },
-          ),
-          IconButton(
             icon: const Icon(Icons.bluetooth),
             onPressed: () {
-              Navigator.pushNamed(context, '/bluetooth'); // ✅ Accès à la page Bluetooth
+              Navigator.pushNamed(context, '/bluetooth');
             },
           ),
         ],

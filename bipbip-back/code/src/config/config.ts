@@ -14,7 +14,8 @@ const apiConfig: ApiConfig = {
   dataBaseCredentials: {
     user: 'bipuser',
     password: 'bipsecret',
-  }
+  },
+  medicationApiUrl: "https://medicaments-api.giygas.dev/v1"
 };
 
 export default apiConfig;
