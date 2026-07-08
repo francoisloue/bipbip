@@ -3,7 +3,7 @@ import eventAction from '../../actions/eventActions';
 
 export class GetEventList extends AbstractService {
   async executeProcess(data: any): Promise<object> {
-    const userId: number = data?.user;
+    const userId: number = data?.id;
     const events = await eventAction.getEventByUserId(userId);
     return {
       status: 200,

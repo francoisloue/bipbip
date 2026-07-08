@@ -7,6 +7,7 @@ import CreateMedication from './services/medications/createMedication';
 import DeleteMedicationFromId from './services/medications/deleteMedication';
 import GetMedicationById from './services/medications/getMedicationById';
 import GetMedicationList from './services/medications/getMedicationList';
+import SearchMedication from './services/medications/searchMedication';
 import UpdateMedicationFromId from './services/medications/updateMedication';
 import CreateUser from './services/users/createUser';
 import DeleteUserFromId from './services/users/deleteUser';
@@ -79,5 +80,9 @@ export const serviceRegister: Service[] = [
   {
     operationId: 'deleteMedication',
     className: DeleteMedicationFromId,
+  },
+  {
+    operationId: 'searchMedication',
+    className: SearchMedication,
   }
 ];

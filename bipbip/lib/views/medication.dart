@@ -1,6 +1,7 @@
+import 'package:bipbip/models/newMedication.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../controllers/medication_controller.dart';
-import '../models/medication.dart';
 import '../services/medication.dart';
 
 class CreateMedicationView extends StatefulWidget {
@@ -12,118 +13,133 @@ class CreateMedicationView extends StatefulWidget {
 
 class _CreateMedicationViewState extends State<CreateMedicationView> {
   final _formKey = GlobalKey<FormState>();
-
-  // Instancier le contrôleur
-  final MedicationController _medicationController = MedicationController(MedicationService());
-
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _descriptionController = TextEditingController();
-
+  final _medicationController = MedicationController(MedicationService());
+  final _nameController = TextEditingController();
+  final _imageUrlController = TextEditingController();
+  final _noticeUrlController = TextEditingController();
   bool _isLoading = false;
-  String? _errorMessage;
 
-  // Fonction pour envoyer le médicament en passant par le contrôleur
   Future<void> _createMedication() async {
     if (_formKey.currentState!.validate()) {
-      setState(() {
-        _isLoading = true;
-        _errorMessage = null;
-      });
+      setState(() => _isLoading = true);
 
-      final medication = Medication(
-        id: 0,
+      final newMedication = NewMedication(
         name: _nameController.text,
-        description: _descriptionController.text,
+        imageUrl: _imageUrlController.text,
+        noticeUrl: _noticeUrlController.text,
       );
 
       try {
-        // Utiliser le contrôleur pour créer le médicament
-        final createdMedication = await _medicationController.createMedication(medication);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Medication created: ${createdMedication.name}')),
-        );
-        // Réinitialiser les champs du formulaire
-        _nameController.clear();
-        _descriptionController.clear();
+        await _medicationController.createMedication(newMedication);
+        HapticFeedback.lightImpact();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Médicament créé avec succès'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+          Navigator.pop(context, true);
+        }
       } catch (e) {
-        setState(() {
-          _errorMessage = 'Failed to create medication: $e';
-        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Erreur : $e'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
       } finally {
-        setState(() {
-          _isLoading = false;
-        });
+        if (mounted) setState(() => _isLoading = false);
       }
     }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _imageUrlController.dispose();
+    _noticeUrlController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Create Medication'),
+        title: const Text('Créer un médicament'),
+        centerTitle: true,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
         child: Form(
           key: _formKey,
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Text("Ajoute un médicament manuellement s'il n'est pas trouvé dans la recherche automatique.",
+                  style: TextStyle(fontSize: 14, color: Colors.grey.shade600)),
+              const SizedBox(height: 20),
               TextFormField(
                 controller: _nameController,
                 decoration: const InputDecoration(
-                  labelText: 'Medication Name',
+                  labelText: 'Nom du médicament',
+                  hintText: 'ex: Doliprane 500mg',
                   border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.medication),
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter the name of the medication';
-                  }
-                  return null;
-                },
+                validator: (value) => value == null || value.isEmpty ? 'Nom requis' : null,
+                textInputAction: TextInputAction.next,
               ),
               const SizedBox(height: 16),
               TextFormField(
-                controller: _descriptionController,
+                controller: _imageUrlController,
                 decoration: const InputDecoration(
-                  labelText: 'Description',
+                  labelText: 'URL de l\'image',
+                  hintText: 'https://...',
                   border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.image),
                 ),
-                maxLines: 3,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a description';
-                  }
-                  return null;
-                },
+                keyboardType: TextInputType.url,
+                textInputAction: TextInputAction.next,
               ),
               const SizedBox(height: 16),
-
-              if (_errorMessage != null) ...[
-                Text(
-                  _errorMessage!,
-                  style: const TextStyle(color: Colors.red),
+              TextFormField(
+                controller: _noticeUrlController,
+                decoration: const InputDecoration(
+                  labelText: 'URL de la notice',
+                  hintText: 'https://...',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.description),
                 ),
-                const SizedBox(height: 16),
-              ],
-
-              ElevatedButton(
-                onPressed: _isLoading ? null : _createMedication,
-                child: _isLoading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text('Create Medication'),
+                keyboardType: TextInputType.url,
+                textInputAction: TextInputAction.done,
+              ),
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton.icon(
+                  onPressed: _isLoading ? null : _createMedication,
+                  icon: _isLoading
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      : const Icon(Icons.check_circle_outline),
+                  label: Text(
+                    _isLoading ? 'Création...' : 'Créer le médicament',
+                    style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue.shade600,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                ),
               ),
             ],
           ),
         ),
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _descriptionController.dispose();
-    super.dispose();
   }
 }

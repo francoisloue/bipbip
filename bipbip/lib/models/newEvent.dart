@@ -1,6 +1,4 @@
-import 'package:bipbip/models/medication.dart';
-
-class Event {
+class NewEvent {
   final int? id;
   final int userId;
   final String name;
@@ -9,9 +7,8 @@ class Event {
   final bool isActive;
   final int medicationId;
   final DateTime? takePillDate;
-  Medication? medication;
 
-  Event({
+  NewEvent({
     this.id,
     required this.userId,
     required this.name,
@@ -20,26 +17,26 @@ class Event {
     required this.isActive,
     required this.medicationId,
     required this.takePillDate,
-    this.medication,
   });
 
-  factory Event.fromJson(Map<String, dynamic> json) {
-    return Event(
+  factory NewEvent.fromJson(Map<String, dynamic> json) {
+    return NewEvent(
       id: json['id'],
       userId: json['user_id'],
       name: json['name'],
       description: json['description'],
       frequency: json['frequency'],
-      isActive: json['is_active'],
+      isActive: json['is_active'] ?? true,
       medicationId: json['medication_id'],
-      takePillDate: DateTime.tryParse(json['take_pill_date']),
-      medication: null
+      takePillDate: json['take_pill_date']
+          ? DateTime.tryParse(json['take_pill_date'])
+          : null,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
+      if (id != null) 'id': id,
       'user_id': userId,
       'name': name,
       'description': description,
@@ -47,7 +44,6 @@ class Event {
       'is_active': isActive,
       'medication_id': medicationId,
       'take_pill_date': takePillDate?.toIso8601String(),
-      'medication': medication
     };
   }
 }

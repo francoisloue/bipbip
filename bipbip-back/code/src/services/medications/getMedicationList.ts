@@ -3,10 +3,10 @@ import medicationActions from '../../actions/medicationActions';
 
 export class GetMedicationList extends AbstractService {
   async executeProcess(): Promise<object> {
-    const users = await medicationActions.getMedicationListAction();
+    const medications = await medicationActions.getMedicationListAction();
     return {
       status: 200,
-      users,
+      medications,
     };
   }
 }

@@ -1,74 +1,96 @@
-import 'package:bipbip/views/list_event.dart';
+import 'package:bipbip/config/app_config.dart';
+import 'package:bipbip/views/home_screen.dart';
+import 'package:bipbip/views/create_event.dart';
+import 'package:bipbip/views/bluetooth_page.dart';
+import 'package:bipbip/views/profile_page.dart';
 import 'package:bipbip/views/medication.dart';
 import 'package:flutter/material.dart';
-import 'package:bipbip/views/create_event.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('fr_FR', null);
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  _MyAppState createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  final _config = AppConfig();
+
+  @override
+  void initState() {
+    super.initState();
+    _config.addListener(_onConfigChanged);
+  }
+
+  @override
+  void dispose() {
+    _config.removeListener(_onConfigChanged);
+    super.dispose();
+  }
+
+  void _onConfigChanged() {
+    setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Medication & Events App',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: const EventListScreen(), // La vue principale est la liste des événements
+      title: 'BipBip',
+      theme: _buildLightTheme(),
+      darkTheme: _buildDarkTheme(),
+      themeMode: _config.themeMode,
+      home: const HomeScreen(),
       routes: {
-        '/create-medication': (context) => const CreateMedicationView(), // Route pour ajouter un médicament
-        '/create-event': (context) => const CreateEventScreen(), // Route pour ajouter un événement
+        '/create-event': (context) => const CreateEventScreen(),
+        '/bluetooth': (context) => const BluetoothPage(),
+        '/profile': (context) => const ProfilePage(),
+        '/create-medication': (context) => const CreateMedicationView(),
       },
     );
   }
-}
 
-// Écran principal : Liste des événements
-class EventListScreen extends StatefulWidget {
-  const EventListScreen({super.key});
-
-  @override
-  _EventListScreenState createState() => _EventListScreenState();
-}
-
-class _EventListScreenState extends State<EventListScreen> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      key: _scaffoldKey,
-      appBar: AppBar(
-        title: const Text('Mes événements'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.medical_services),
-            onPressed: () {
-              // Naviguer vers la vue pour créer un nouveau médicament
-              Navigator.pushNamed(context, '/create-medication');
-            },
-          ),
-        ],
+  ThemeData _buildLightTheme() {
+    return ThemeData(
+      primarySwatch: Colors.blue,
+      brightness: Brightness.light,
+      cardTheme: CardTheme(
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: BorderSide(color: Colors.grey.shade200),
+        ),
       ),
-      body: const EventListView(userId: 2), // Remplacez l'ID de l'utilisateur si nécessaire
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          // Naviguer vers la vue pour créer un nouvel événement
-          final result = await Navigator.pushNamed(context, '/create-event');
-          if (result == 'success') {
-            // Rafraîchir la liste après la création d'un événement
-            setState(() {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Événement ajouté avec succès')),
-              );
-            });
-          }
-        },
-        child: const Icon(Icons.add),
+      appBarTheme: const AppBarTheme(
+        centerTitle: true,
+        elevation: 0,
       ),
+    );
+  }
+
+  ThemeData _buildDarkTheme() {
+    return ThemeData(
+      primarySwatch: Colors.blue,
+      brightness: Brightness.dark,
+      cardTheme: CardTheme(
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: BorderSide(color: Colors.grey.shade800),
+        ),
+      ),
+      appBarTheme: AppBarTheme(
+        centerTitle: true,
+        elevation: 0,
+        backgroundColor: Colors.grey.shade900,
+      ),
+      scaffoldBackgroundColor: Colors.grey.shade900,
     );
   }
 }

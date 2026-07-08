@@ -1,3 +1,5 @@
+import 'package:bipbip/models/newMedication.dart';
+
 import '../services/medication.dart';
 import '../models/medication.dart';
 
@@ -6,7 +8,7 @@ class MedicationController {
 
   MedicationController(this.medicationService);
 
-  Future<Medication> createMedication(Medication medication) async {
-    return await medicationService.createObject(medication);
+  Future<Medication> createMedication(NewMedication medication) async {
+    return await medicationService.createMedication(medication);
   }
 }
